@@ -2,3 +2,4 @@ src
 .idea
 .check-build
 Makefile
+.git
