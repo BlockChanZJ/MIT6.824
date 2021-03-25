@@ -1,2 +1,4 @@
 src
 .idea
+.check-build
+Makefile
