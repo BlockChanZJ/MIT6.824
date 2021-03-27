@@ -2,17 +2,17 @@
 Basic Sources for MIT 6.824 Distributed Systems Class
 
 ## LAB进度
--[x] Lab1
--[ ] Lab2
-    -[ ] Lab2A
-    -[ ] Lab2B
-    -[ ] Lab2C
--[ ] Lab3
-    -[ ] Lab3A
-    -[ ] Lab3B
--[ ] Lab4
-    -[ ] Lab4A
-    -[ ] Lab4B
+- [x] Lab1
+- [ ] Lab2
+    - [ ] Lab2A
+    - [ ] Lab2B
+    - [ ] Lab2C
+- [ ] Lab3
+    - [ ] Lab3A
+    - [ ] Lab3B
+- [ ] Lab4
+    - [ ] Lab4A
+    - [ ] Lab4B
 
 MIT 6.824 课程的学习资料
 
