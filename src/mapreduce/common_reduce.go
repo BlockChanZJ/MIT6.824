@@ -3,7 +3,6 @@ package mapreduce
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -63,7 +62,6 @@ func doReduce(
 		fileContents, err := ioutil.ReadFile(inputFilename)
 		//fmt.Println(inputFilename)
 		if err != nil {
-			fmt.Println(fileContents[0:100])
 			log.Fatal("read ", inputFilename, " error in doReduce")
 		}
 		dec := json.NewDecoder(strings.NewReader(string(fileContents)))
