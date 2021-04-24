@@ -1,0 +1,85 @@
+func (rf *Raft) election()  {
+
+	DPrintf("[election] : %v participate in the election! term=%v, votefor=%v, status=%v!\n",
+		rf.me,rf.currentTerm,rf.votedFor,rf.status)
+	var count int32
+	count = 0
+	var group sync.WaitGroup
+	rf.votedFor = rf.me
+	lockCount := 1
+
+	for i := 0; i < len(rf.peers); i++ {
+		if rf.me == i {
+			continue
+		}
+
+		select {
+		// there is already a LEADER
+		case <-rf.appendEntriesChan:
+			goto FINISH
+		case <-rf.requestVoteChan:
+			goto FINISH
+		default:
+			group.Add(1)
+			lockCount++
+			DPrintf("[%v's LOCK] : %v's group add! request %v! lockCount = %v\n",rf.me,rf.me,i, lockCount)
+			go func(server int) {
+				args := RequestVoteArgs {
+					// FIXME : currentTerm, LastLogIndex and LastLogTerm
+					Term:         rf.currentTerm,
+					CandidateId:  rf.me,
+					LastLogIndex: len(rf.log),
+					LastLogTerm:  rf.currentTerm,
+				}
+				reply := RequestVoteReply {
+					Term:        -1,
+					VoteGranted: false,
+				}
+				if rf.status != CANDIDATE {
+					return
+				}
+				// no reply
+				DPrintf("[election] %v want to get %v's votes! beginning!\n",rf.me,server)
+				if ok := rf.sendRequestVote(server, &args, &reply); !ok {
+					DPrintf("[election] %v DONT gets %v's votes! NO RESPONSE!\n",rf.me,server)
+					group.Done()
+					lockCount--
+					DPrintf("[%v's LOCK] : %v's group done! request %v! lockCount = %v\n",rf.me,rf.me,server,lockCount)
+					return
+				} else if reply.VoteGranted == true {
+					atomic.AddInt32(&count, 1)
+					DPrintf("[election] %v gets %v's votes! now %v counts!\n",rf.me,server,count)
+				} else {
+					DPrintf("[election] %v DONT gets %v's votes! now %v counts!\n",rf.me,server,count)
+				}
+				group.Done()
+				lockCount--
+				DPrintf("[%v's LOCK] : %v's group done! request %v! lockCount = %v\n",rf.me,rf.me,server,lockCount)
+			}(i)
+		}
+
+	}
+FINISH:
+	DPrintf("[WaitGroup] : %v waiting...!\n",rf.me)
+	// ensure election finished
+
+	for {
+		select {
+		case <-rf.requestVoteChan:
+			goto REALFINISH
+		case <-rf.appendEntriesChan:
+			goto REALFINISH
+		case <-time.After(ElectionTimeout):
+			group.Wait()
+			goto REALFINISH
+		default:
+			time.Sleep(time.Duration(50) * time.Millisecond)
+		}
+	}
+
+REALFINISH:
+	DPrintf("[election finish] : %v election finished! get %v votes! status = %v, term = %v\n",rf.me,count,rf.status,rf.currentTerm)
+	if rf.status == CANDIDATE && count * 2 > int32(len(rf.peers)) {
+		rf.setLeader()
+	}
+}

@@ -49,7 +49,10 @@ package labrpc
 //   pass svc to srv.AddService()
 //
 
-import "labgob"
+import (
+	//"fmt"
+	"labgob"
+)
 import "bytes"
 import "reflect"
 import "sync"
@@ -81,6 +84,7 @@ type ClientEnd struct {
 // send an RPC, wait for the reply.
 // the return value indicates success; false means that
 // no reply was received from the server.
+var count int
 func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bool {
 	req := reqMsg{}
 	req.endname = e.endname
@@ -100,7 +104,11 @@ func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bo
 		return false
 	}
 
+	count++
+	//fmt.Println("in!!!!!!!!!!!!!!!!!!!!! count = ", count)
 	rep := <-req.replyCh
+	count--
+	//fmt.Println("out!!!!!!!!!!!!!!!!!!!! count = ", count)
 	if rep.ok {
 		rb := bytes.NewBuffer(rep.reply)
 		rd := labgob.NewDecoder(rb)
