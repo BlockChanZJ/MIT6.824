@@ -44,7 +44,7 @@ type config struct {
 	connected []bool   // whether each server is on the net
 	saved     []*Persister
 	endnames  [][]string    // the port file names each sends to
-	logs      []map[int]int // copy of each server's committed Entries
+	logs      []map[int]int // copy of each server's committed entries
 	start     time.Time     // time at which make_config() was called
 	// begin()/end() statistics
 	t0        time.Time // time at which test_test.go called cfg.begin()
@@ -73,7 +73,7 @@ func make_config(t *testing.T, n int, unreliable bool) *config {
 	cfg.connected = make([]bool, cfg.n)
 	cfg.saved = make([]*Persister, cfg.n)
 	cfg.endnames = make([][]string, cfg.n)
-	cfg.logs = make([]map[int]int, cfg.n) // map<int,int> maps[]
+	cfg.logs = make([]map[int]int, cfg.n)
 	cfg.start = time.Now()
 
 	cfg.setunreliable(unreliable)
@@ -174,7 +174,7 @@ func (cfg *config) start1(i int) {
 				cfg.mu.Lock()
 				for j := 0; j < len(cfg.logs); j++ {
 					if old, oldok := cfg.logs[j][m.CommandIndex]; oldok && old != v {
-						// some server has already committed a different Value for this entry!
+						// some server has already committed a different value for this entry!
 						err_msg = fmt.Sprintf("commit index=%v server=%v %v != server=%v %v",
 							m.CommandIndex, i, m.Command, j, old)
 					}
@@ -300,8 +300,7 @@ func (cfg *config) checkOneLeader() int {
 		ms := 450 + (rand.Int63() % 100)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 
-		leaders := make(map[int][]int) // map<int, []int>
-
+		leaders := make(map[int][]int)
 		for i := 0; i < cfg.n; i++ {
 			if cfg.connected[i] {
 				if term, leader := cfg.rafts[i].GetState(); leader {
@@ -313,7 +312,7 @@ func (cfg *config) checkOneLeader() int {
 		lastTermWithLeader := -1
 		for term, leaders := range leaders {
 			if len(leaders) > 1 {
-				cfg.t.Fatalf("Term %d has %d (>1) leaders", term, len(leaders))
+				cfg.t.Fatalf("term %d has %d (>1) leaders", term, len(leaders))
 			}
 			if term > lastTermWithLeader {
 				lastTermWithLeader = term
@@ -328,7 +327,7 @@ func (cfg *config) checkOneLeader() int {
 	return -1
 }
 
-// check that everyone agrees on the Term.
+// check that everyone agrees on the term.
 func (cfg *config) checkTerms() int {
 	term := -1
 	for i := 0; i < cfg.n; i++ {
@@ -337,7 +336,7 @@ func (cfg *config) checkTerms() int {
 			if term == -1 {
 				term = xterm
 			} else if term != xterm {
-				cfg.t.Fatalf("servers disagree on Term")
+				cfg.t.Fatalf("servers disagree on term")
 			}
 		}
 	}
@@ -367,6 +366,7 @@ func (cfg *config) nCommitted(index int) (int, interface{}) {
 
 		cfg.mu.Lock()
 		cmd1, ok := cfg.logs[i][index]
+		DPrintf("cmd1 = %v, ok = %v, cfg.logs[%v] = %v, index = %v\n",cmd1, ok, i, cfg.logs[i], index)
 		cfg.mu.Unlock()
 
 		if ok {
@@ -417,7 +417,7 @@ func (cfg *config) wait(index int, n int, startTerm int) interface{} {
 // and have to re-submit after giving up.
 // entirely gives up after about 10 seconds.
 // indirectly checks that the servers agree on the
-// same Value, since nCommitted() checks this,
+// same value, since nCommitted() checks this,
 // as do the threads that read from applyCh.
 // returns index.
 // if retry==true, may submit the command multiple
@@ -498,7 +498,11 @@ func (cfg *config) end() {
 		ncmds := cfg.maxIndex - cfg.maxIndex0 // number of Raft agreements reported
 		cfg.mu.Unlock()
 
-		fmt.Printf("  ... Passed --")
-		fmt.Printf("  %4.1f  %d %4d %4d\n", t, npeers, nrpc, ncmds)
+		fmt.Printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+		fmt.Printf("!!!!!!!!!!!!!!!!!! ... Passed -- !!!!!!!!!!!!!!!!!\n")
+		fmt.Printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+		fmt.Printf("!!!!!!!!!!!!!%4.1f  %d %4d %4d!!!!!!!!!!!!!!!!!!!!\n", t, npeers, nrpc, ncmds)
+	} else {
+		log.Fatal("failed!")
 	}
 }

@@ -50,7 +50,6 @@ package labrpc
 //
 
 import (
-	//"fmt"
 	"labgob"
 )
 import "bytes"
@@ -84,7 +83,6 @@ type ClientEnd struct {
 // send an RPC, wait for the reply.
 // the return value indicates success; false means that
 // no reply was received from the server.
-var count int
 func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bool {
 	req := reqMsg{}
 	req.endname = e.endname
@@ -104,11 +102,7 @@ func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bo
 		return false
 	}
 
-	count++
-	//fmt.Println("in!!!!!!!!!!!!!!!!!!!!! count = ", count)
 	rep := <-req.replyCh
-	count--
-	//fmt.Println("out!!!!!!!!!!!!!!!!!!!! count = ", count)
 	if rep.ok {
 		rb := bytes.NewBuffer(rep.reply)
 		rd := labgob.NewDecoder(rb)
@@ -274,7 +268,8 @@ func (rn *Network) ProcessReq(req reqMsg) {
 			req.replyCh <- replyMsg{false, nil}
 		} else if longreordering == true && rand.Intn(900) < 600 {
 			// delay the response for a while
-			ms := 200 + rand.Intn(1+rand.Intn(2000))
+			//ms := 200 + rand.Intn(1+rand.Intn(2000))
+			ms := 200 + rand.Intn(1+rand.Intn(100))
 			// Russ points out that this timer arrangement will decrease
 			// the number of goroutines, so that the race
 			// detector is less likely to get upset.
@@ -290,7 +285,8 @@ func (rn *Network) ProcessReq(req reqMsg) {
 		if rn.longDelays {
 			// let Raft tests check that leader doesn't send
 			// RPCs synchronously.
-			ms = (rand.Int() % 7000)
+			//ms = (rand.Int() % 7000)
+			ms = (rand.Int() % 700)
 		} else {
 			// many kv tests require the client to try each
 			// server in fairly rapid succession.
