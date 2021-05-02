@@ -697,15 +697,16 @@ func (rf *Raft) syncLog() {
 					}
 					rf.mu.Lock()
 					updated := make([]int, 0)
-					for i := range set{
-						if set[i] == false {
+					for k, _ := range set{
+						if set[k] == false {
 							continue
 						}
-						updated = append(updated, i)
-						go rf.updateAppliedLog(i)
+						updated = append(updated, k)
+						go rf.updateAppliedLog(k)
 					}
 					for i := 0; i < len(updated); i++ {
-						delete(set, updated[i])
+						k := updated[i]
+						delete(set, k)
 					}
 					rf.mu.Unlock()
 				}
@@ -874,7 +875,7 @@ func (rf *Raft) election() {
 
 	// FIXME: current term
 	if rf.status != LEADER {
-		rf.currentTerm = max(rf.currentTerm, maxTerm + 1)
+		rf.currentTerm = max(rf.currentTerm, maxTerm)
 	}
 	rf.mu.Unlock()
 
