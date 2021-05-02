@@ -20,6 +20,14 @@ import "encoding/base64"
 import "time"
 import "fmt"
 
+func printAllRaft(servers int, cfg *config) {
+	MPrint("=====================printAllRaft==================\n")
+	for i := 0; i < servers; i++ {
+		cfg.rafts[i].printLog()
+	}
+	MPrint("====================================================\n")
+}
+
 func randstring(n int) string {
 	b := make([]byte, 2*n)
 	crand.Read(b)
@@ -180,6 +188,7 @@ func (cfg *config) start1(i int) {
 					}
 				}
 				_, prevok := cfg.logs[i][m.CommandIndex-1]
+				//DPrintf("?????????? num = %v, prevok = %v\n", num, prevok)
 				cfg.logs[i][m.CommandIndex] = v
 				if m.CommandIndex > cfg.maxIndex {
 					cfg.maxIndex = m.CommandIndex
@@ -187,6 +196,7 @@ func (cfg *config) start1(i int) {
 				cfg.mu.Unlock()
 
 				if m.CommandIndex > 1 && prevok == false {
+					DPrintf("cfg.logs[%v][%v] = %v\n",i,m.CommandIndex-1,cfg.logs[i])
 					err_msg = fmt.Sprintf("server %v apply out of order %v", i, m.CommandIndex)
 				}
 			} else {
@@ -215,9 +225,10 @@ func (cfg *config) start1(i int) {
 }
 
 func (cfg *config) checkTimeout() {
+	timeout := 1000
 	// enforce a two minute real-time limit on each test
-	if !cfg.t.Failed() && time.Since(cfg.start) > 120*time.Second {
-		cfg.t.Fatal("test took longer than 120 seconds")
+	if !cfg.t.Failed() && time.Since(cfg.start) > time.Duration(timeout)*time.Second {
+		cfg.t.Fatal("test took longer than ", timeout, " seconds")
 	}
 }
 
@@ -366,7 +377,7 @@ func (cfg *config) nCommitted(index int) (int, interface{}) {
 
 		cfg.mu.Lock()
 		cmd1, ok := cfg.logs[i][index]
-		DPrintf("cmd1 = %v, ok = %v, cfg.logs[%v] = %v, index = %v\n",cmd1, ok, i, cfg.logs[i], index)
+		//DPrintf("cmd1 = %v, ok = %v, cfg.logs[%v] = %v, index = %v\n",cmd1, ok, i, cfg.logs[i], index)
 		cfg.mu.Unlock()
 
 		if ok {

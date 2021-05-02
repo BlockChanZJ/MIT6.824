@@ -4,7 +4,7 @@ Basic Sources for MIT 6.824 Distributed Systems Class
 ## LAB进度
 - [x] Lab1
 - [ ] Lab2
-    - [ ] Lab2A
+    - [x] Lab2A
     - [ ] Lab2B
     - [ ] Lab2C
 - [ ] Lab3
