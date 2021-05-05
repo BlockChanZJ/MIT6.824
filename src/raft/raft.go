@@ -150,19 +150,24 @@ func (rf *Raft) persist() {
 	// e.Encode(rf.yyy)
 	// data := w.Bytes()
 	// rf.persister.SaveRaftState(data)
-	w := new(bytes.Buffer)
-	e := labgob.NewEncoder(w)
+	if rf.lastApplied == rf.lastIncludedIndex {
+		return
+	}
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	rf.lastIncludedIndex = rf.lastApplied
+
+	w := new(bytes.Buffer)
+	e := labgob.NewEncoder(w)
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votedFor)
 	e.Encode(rf.lastIncludedIndex)
 	e.Encode(rf.log)
 	data := w.Bytes()
 	rf.persister.SaveRaftState(data)
-	rf.lastIncludedIndex = rf.lastApplied
+
 	DPrintf("[persist] : me = %v, status = %v, lastApplied = %v, commitIndex = %v, lastIncludedIndex = %v, log = %v\n",
 		rf.me,rf.status,rf.lastApplied, rf.commitIndex, rf.lastIncludedIndex,rf.log)
 }
@@ -187,6 +192,7 @@ func (rf *Raft) readPersist(data []byte) {
 		d.Decode(&logs) != nil {
 		log.Fatal("error in readPersist!!!!!\n")
 	} else {
+		rf.mu.Lock()
 		rf.votedFor = votedFor
 		rf.currentTerm = currentTerm
 		rf.lastIncludedIndex = lastIncludedIndex
@@ -201,6 +207,7 @@ func (rf *Raft) readPersist(data []byte) {
 			rf.matchIndex[i] = 0
 		}
 		rf.log = logs
+		rf.mu.Unlock()
 	}
 	//DPrintf("[readPersist] : data = %v, votedFor = %v, currentTerm = %v\n",data,votedFor,currentTerm)
 }
@@ -426,8 +433,8 @@ func max(x int, y int) int {
 }
 
 func (rf *Raft) printLog() {
-	MPrint("[me = %v], currentTerm = %v, status = %v, votedFor = %v, lastApplied = %v, commitIndex = %v, log = %v\n",
-		rf.me, rf.currentTerm, rf.status, rf.votedFor, rf.lastApplied, rf.commitIndex, rf.log)
+	MPrint("[me = %v], currentTerm = %v, status = %v, votedFor = %v, lastApplied = %v, commitIndex = %v, lastIncludedIndex = %v, log = %v\n",
+		rf.me, rf.currentTerm, rf.status, rf.votedFor, rf.lastApplied, rf.commitIndex, rf.lastIncludedIndex, rf.log)
 	if rf.status == LEADER {
 		MPrint("[me = %v], matchIndex = %v\n", rf.me, rf.matchIndex)
 	}
@@ -796,6 +803,7 @@ func (rf *Raft) sendServerLogMsg(prev int, curr int) {
 			}
 		}
 		rf.lastApplied = curr
+		go rf.persist()
 	}
 }
 
@@ -1070,7 +1078,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 
 	go rf.startService()
 
-	go rf.startPersistService()
+	//go rf.startPersistService()
 
 	//go rf.startPrintLogService()
 

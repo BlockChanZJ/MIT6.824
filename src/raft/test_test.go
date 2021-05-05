@@ -545,7 +545,7 @@ loop:
 }
 
 func TestPersist12C(t *testing.T) {
-	return
+	//return
 	servers := 3
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -566,10 +566,16 @@ func TestPersist12C(t *testing.T) {
 
 	cfg.one(12, servers, true)
 
+	DPrintf("append 12 ~~~~~~~~~~`")
+	printAllRaft(servers, cfg)
+
 	leader1 := cfg.checkOneLeader()
 	cfg.disconnect(leader1)
 	cfg.start1(leader1)
 	cfg.connect(leader1)
+
+	printAllRaft(servers, cfg)
+	DPrintf("append 13 ~~~~~~~~~~\n")
 
 	cfg.one(13, servers, true)
 
@@ -593,7 +599,7 @@ func TestPersist12C(t *testing.T) {
 }
 
 func TestPersist22C(t *testing.T) {
-	return
+	//return
 	servers := 5
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -649,7 +655,7 @@ func TestPersist22C(t *testing.T) {
 }
 
 func TestPersist32C(t *testing.T) {
-	return
+	//return
 	servers := 3
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -690,7 +696,7 @@ func TestPersist32C(t *testing.T) {
 // haven't been committed yet.
 //
 func TestFigure82C(t *testing.T) {
-	return
+	//return
 	servers := 5
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -747,7 +753,7 @@ func TestFigure82C(t *testing.T) {
 }
 
 func TestUnreliableAgree2C(t *testing.T) {
-	return
+	//return
 	servers := 5
 	cfg := make_config(t, servers, true)
 	defer cfg.cleanup()
@@ -833,7 +839,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 }
 
 func internalChurn(t *testing.T, unreliable bool) {
-	return
+	//return
 	servers := 5
 	cfg := make_config(t, servers, unreliable)
 	defer cfg.cleanup()
