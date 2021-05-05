@@ -121,12 +121,14 @@ func (cfg *config) crash1(i int) {
 	rf := cfg.rafts[i]
 	if rf != nil {
 		cfg.mu.Unlock()
+		//DPrintf("kill %v!\n",i)
 		rf.Kill()
 		cfg.mu.Lock()
 		cfg.rafts[i] = nil
 	}
 
 	if cfg.saved[i] != nil {
+		//DPrintf("[crash1] : cfg.saved[%v] = %v\n",i,cfg.saved[i])
 		raftlog := cfg.saved[i].ReadRaftState()
 		cfg.saved[i] = &Persister{}
 		cfg.saved[i].SaveRaftState(raftlog)

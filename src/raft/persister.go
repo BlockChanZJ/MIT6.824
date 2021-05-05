@@ -34,11 +34,13 @@ func (ps *Persister) SaveRaftState(state []byte) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 	ps.raftstate = state
+	//DPrintf("[SaveRaftState] : state = %v, raft.state = %v\n",state,ps.raftstate)
 }
 
 func (ps *Persister) ReadRaftState() []byte {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
+	//DPrintf("[ReadRaftState] : raft.state = %v\n", ps.raftstate)
 	return ps.raftstate
 }
 

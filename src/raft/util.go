@@ -7,8 +7,8 @@ import (
 )
 
 // Debugging
-const Debug = 0
-const MDebug = 0
+const Debug = 3
+const MDebug = 2
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug == 1 { // log
