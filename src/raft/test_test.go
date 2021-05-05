@@ -545,7 +545,7 @@ loop:
 }
 
 func TestPersist12C(t *testing.T) {
-	//return
+	return
 	servers := 3
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -599,7 +599,7 @@ func TestPersist12C(t *testing.T) {
 }
 
 func TestPersist22C(t *testing.T) {
-	//return
+	return
 	servers := 5
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -655,7 +655,7 @@ func TestPersist22C(t *testing.T) {
 }
 
 func TestPersist32C(t *testing.T) {
-	//return
+	return
 	servers := 3
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -696,7 +696,7 @@ func TestPersist32C(t *testing.T) {
 // haven't been committed yet.
 //
 func TestFigure82C(t *testing.T) {
-	//return
+	return
 	servers := 5
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
@@ -753,7 +753,7 @@ func TestFigure82C(t *testing.T) {
 }
 
 func TestUnreliableAgree2C(t *testing.T) {
-	//return
+	return
 	servers := 5
 	cfg := make_config(t, servers, true)
 	defer cfg.cleanup()
@@ -816,12 +816,16 @@ func TestFigure8Unreliable2C(t *testing.T) {
 		if leader != -1 && (rand.Int()%1000) < int(RaftElectionTimeout/time.Millisecond)/2 {
 			cfg.disconnect(leader)
 			nup -= 1
+			DPrintf("leader = %v, %d disconnect, online = %v ~~~~~~\n",leader,leader,cfg.connected)
+			printAllRaft(servers,cfg)
 		}
 
 		if nup < 3 {
 			s := rand.Int() % servers
 			if cfg.connected[s] == false {
 				cfg.connect(s)
+				DPrintf("%d connect , online = %v~~~~~~~\n",s,cfg.connected)
+				printAllRaft(servers,cfg)
 				nup += 1
 			}
 		}
@@ -829,6 +833,8 @@ func TestFigure8Unreliable2C(t *testing.T) {
 
 	for i := 0; i < servers; i++ {
 		if cfg.connected[i] == false {
+			DPrintf("%v connect, online = %v ~~~~~~\n",i,cfg.connected)
+			printAllRaft(servers,cfg)
 			cfg.connect(i)
 		}
 	}
@@ -839,7 +845,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 }
 
 func internalChurn(t *testing.T, unreliable bool) {
-	//return
+	return
 	servers := 5
 	cfg := make_config(t, servers, unreliable)
 	defer cfg.cleanup()

@@ -530,6 +530,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	//start := time.Now()
 	//DPrintf("[request vote time] : from %v to %v, trying...\n", rf.me, server)
+	if rf.status != CANDIDATE {
+		return false
+	}
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 	if ok {
 		atomic.AddInt32(&requestVoteCount, 1)
@@ -543,13 +546,18 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	reply.Success = false
 
 	// FIXME : refuse appendEntries correctly
-	if args.Term < rf.currentTerm {
-		return
-	}
+
+	rf.mu.Lock()
 	if rf.status == LEADER {
 		rf.setFollower(args.Term)
+		rf.mu.Unlock()
 		return
 	}
+	if args.Term < rf.currentTerm {
+		rf.mu.Unlock()
+		return
+	}
+	rf.mu.Unlock()
 	if args.EntryType == HEARTBEAT {
 
 		rf.appendEntriesChan <- true
@@ -607,6 +615,9 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 
 	//start := time.Now()
 	//DPrintf("[send append entries time] : from %v to %v, args = %v. trying.........\n", rf.me, server, args)
+	if rf.status != LEADER {
+		return false
+	}
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 	if ok {
 		if args.EntryType == HEARTBEAT {
@@ -661,9 +672,11 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	if rf.status != LEADER {
 		return index, rf.currentTerm, false
 	}
+
 	term = rf.currentTerm
 
-	//DPrintf("[start] : me = %v, commitIndex = %v, log = %v\n",rf.me,rf.commitIndex,rf.log)
+	DPrintf("[start] : me = %v, status = %v, lastApplied = %v, lastIncluded = %v, commitIndex = %v, log_len = %v, new log = %v\n",
+		rf.me,rf.status,rf.lastApplied,rf.lastIncludedIndex,rf.commitIndex,len(rf.log),rf.log[len(rf.log)-1])
 	//fmt.Printf("me = %v, index = %v, term = %v, isLeader = %v\n", rf.me, index, term, isLeader)
 	return index, term, isLeader
 }
@@ -710,6 +723,11 @@ func (rf *Raft) syncLog() {
 			} else if reply.Success {
 				//DPrintf("[matchIndex update] :  %v's matchIndex = %v --> %v\n",server,rf.matchIndex[server], logSize-1)
 				rf.mu.Lock()
+
+				if rf.status != LEADER {
+					rf.mu.Unlock()
+					return
+				}
 
 				rf.nextIndex[server] = max (rf.nextIndex[server], logSize)
 				rf.matchIndex[server] = max (rf.matchIndex[server], logSize - 1)
@@ -759,7 +777,7 @@ func (rf *Raft) syncLog() {
 }
 
 func (rf *Raft) updateAppliedLog(server int) bool {
-	if server == rf.me || rf.matchIndex[server] != rf.commitIndex {
+	if server == rf.me || rf.matchIndex[server] != rf.commitIndex || rf.status != LEADER {
 		return false
 	}
 	success := false
@@ -803,7 +821,7 @@ func (rf *Raft) sendServerLogMsg(prev int, curr int) {
 			}
 		}
 		rf.lastApplied = curr
-		go rf.persist()
+		rf.persist()
 	}
 }
 
@@ -917,17 +935,17 @@ func (rf *Raft) heartBeat() {
 		}
 		group.Add(1)
 		go func(server int) {
+			defer group.Done()
 			args, _ := rf.getAppendEntriesArgs(true, server, 0)
 			var reply AppendEntriesReply
 
-			rf.sendAppendEntries(server, &args, &reply)
+			//rf.sendAppendEntries(server, &args, &reply)
 
-			//start := time.Now()
-			//DPrintf("[heartbeat] : from %v to %v, trying...\n", rf.me,server)
-			//ok := rf.sendAppendEntries(server, &args, &reply)
-			//DPrintf("[heartbeat] : from %v to %v, time = %v, ok = %v, success = %v\n",rf.me,server,time.Since(start), ok, reply.Success)
-			defer group.Done()
-
+			start := time.Now()
+			DPrintf("[heartbeat] : from %v to %v, trying...\n", rf.me,server)
+			ok := rf.sendAppendEntries(server, &args, &reply)
+			DPrintf("[heartbeat] : from %v to %v, time = %v, ok = %v, success = %v\n",rf.me,server,time.Since(start), ok, reply.Success)
+			
 			rf.mu.Lock()
 			defer rf.mu.Unlock()
 			maxTerm = max(maxTerm, reply.Term)
